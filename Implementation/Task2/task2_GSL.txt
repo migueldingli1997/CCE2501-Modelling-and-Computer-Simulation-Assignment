@@ -1,0 +1,40 @@
+Initialize
+    SERVICETIME = 2;        # fixed service time of 2 seconds
+    LIGHTSCHANGETIME = 30;  # fixed lights change interval of 30 seconds
+    TIMELIMIT = 14400       # fixed time limit of 4 hours (14400 seconds)
+    ROAD = theRoad          # road that will be simulated
+    NOW = 0;                # current time
+    Q = 0;                  # queue length
+    S = idle;               # server busy state
+    IF ROAD == A THEN L = green ELSE L = red;   # starting lights state
+    Schedule lights change event at time NOW;   # first lights change
+    Schedule arrival event at time NOW;         # first car arrival
+
+WHILE NOW <= TIMELIMIT or event list has more than one item and DO
+    NOW = time on the first event notice;
+    IF event type == 'Arrival' and NOW <= TIMELIMIT THEN execute event routine arrival;
+    IF event type == 'Begin Service' THEN execute event routine begin service;
+    IF event type == 'End Service' THEN execute event routine end service;
+    IF event type == 'Lights Change' THEN execute event routine lights change;
+    Discard first event notice;
+END WHILE
+
+Event Routine Arrival
+    Schedule arrival event at time NOW + interarrival time;
+    Q = Q + 1;
+    IF S == idle THEN
+        IF L == green THEN schedule begin service event at time NOW;
+        ELSE IF Q == 1 THEN schedule begin service event at next lights change;
+
+Event Routine Begin Service
+    Q = Q - 1;
+    S = busy;
+    Schedule end service event at time NOW + SERVICETIME;
+
+Event Routine End Service
+    S = idle;
+    IF Q > 0 and L == green THEN schedule begin service event at time NOW;
+
+Event Routine Lights Change
+    IF L == green THEN L = red ELSE L = green
+    Schedule lights change event at time NOW + LIGHTSCHANGETIME;
